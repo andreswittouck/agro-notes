@@ -1,0 +1,62 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: agro-notes-db
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASS:-postgres}
+      POSTGRES_DB: ${DB_NAME:-agro}
+      TZ: ${TZ:-America/Argentina/Cordoba}
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agro-notes-api
+    environment:
+      # App
+      NODE_ENV: ${NODE_ENV:-development}
+      TZ: ${TZ:-America/Argentina/Cordoba}
+      PORT: ${PORT:-4000}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+
+      # DB (dentro del network, host=nombre del servicio)
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASS: ${DB_PASS:-postgres}
+      DB_NAME: ${DB_NAME:-agro}
+      TYPEORM_SYNC: ${TYPEORM_SYNC:-true}
+      TYPEORM_LOGGING: ${TYPEORM_LOGGING:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - '${PORT:-4000}:4000'
+    # opcional: reinicio automático si truena
+    restart: unless-stopped
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: agro-notes-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@agro-notes.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - '5052:80'
+    depends_on:
+      - db
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  db_data:
+  pgadmin_data:
