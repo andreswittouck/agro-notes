@@ -11,4 +11,5 @@ export const typeOrmConfig = (): DataSourceOptions => ({
   synchronize: (process.env.TYPEORM_SYNC || 'true') === 'true', // MVP
   logging: (process.env.TYPEORM_LOGGING || 'false') === 'true',
   entities: [Note],
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
 });

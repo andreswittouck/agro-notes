@@ -1,0 +1,45 @@
+services:
+  api:
+    build:
+      context: ./agro-notes-api
+      dockerfile: Dockerfile
+    container_name: agro-notes-api-dev
+    environment:
+      NODE_ENV: development
+      TZ: ${TZ:-America/Argentina/Cordoba}
+      PORT: ${API_PORT:-4000}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASS: ${DB_PASS:-postgres}
+      DB_NAME: ${DB_NAME:-agro}
+      TYPEORM_SYNC: ${TYPEORM_SYNC:-true}
+      TYPEORM_LOGGING: ${TYPEORM_LOGGING:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${API_PORT:-4000}:4000"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./agro-notes
+      dockerfile: ./docker/Dockerfile.dev
+    container_name: agro-notes-web-dev
+    environment:
+      NODE_ENV: development
+      NEXT_TELEMETRY_DISABLED: 1
+      TZ: ${TZ:-America/Argentina/Cordoba}
+      NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://localhost:4000}
+    depends_on:
+      - api
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    volumes:
+      - ./agro-notes:/app
+      - /app/node_modules
+      - /app/.next
+    restart: unless-stopped
+    command: ["npm", "run", "dev", "--", "-p", "3000"]

@@ -1,25 +1,56 @@
 "use client";
-import { useState } from "react";
-import { createNote } from "../lib/api";
 
-export default function NoteForm({
-  preset,
-}: {
-  preset?: Partial<{
+import { useEffect, useState } from "react";
+import { createNote } from "../lib/api";
+import { theme } from "../theme";
+import { Label } from "./ui/Label";
+import { Input } from "./ui/Input";
+import { TextArea } from "./ui/TextArea";
+import { Button } from "./ui/Button";
+
+type Preset = Partial<
+  {
     farm: string;
     lot: string;
-    note: string;
     weeds: string[];
     applications: string[];
-  }>;
-}) {
-  const [farm, setFarm] = useState(preset?.farm ?? "");
-  const [lot, setLot] = useState(preset?.lot ?? "");
-  const [weeds, setWeeds] = useState<string[]>(preset?.weeds ?? []);
-  const [applications, setApplications] = useState<string[]>(
-    preset?.applications ?? []
+    note: string;
+  } & {
+    explotacion: string;
+    lote: string;
+    malezas: string[];
+    aplicaciones: string[];
+    nota: string;
+  }
+>;
+
+export default function NoteForm({ preset }: { preset?: Preset }) {
+  const [farm, setFarm] = useState(preset?.farm ?? preset?.explotacion ?? "");
+  const [lot, setLot] = useState(preset?.lot ?? preset?.lote ?? "");
+  const [weeds, setWeeds] = useState<string[]>(
+    preset?.weeds ?? preset?.malezas ?? []
   );
-  const [note, setNote] = useState(preset?.note ?? "");
+  const [applications, setApplications] = useState<string[]>(
+    preset?.applications ?? preset?.aplicaciones ?? []
+  );
+  const [note, setNote] = useState(preset?.note ?? preset?.nota ?? "");
+
+  useEffect(() => {
+    if (!preset) return;
+    if (preset.farm !== undefined || preset.explotacion !== undefined)
+      setFarm(preset.farm ?? preset.explotacion ?? "");
+    if (preset.lot !== undefined || preset.lote !== undefined)
+      setLot(preset.lot ?? preset.lote ?? "");
+    if (preset.weeds !== undefined || preset.malezas !== undefined)
+      setWeeds((preset.weeds ?? preset.malezas ?? []) as string[]);
+    if (preset.applications !== undefined || preset.aplicaciones !== undefined)
+      setApplications(
+        (preset.applications ?? preset.aplicaciones ?? []) as string[]
+      );
+    if (preset.note !== undefined || preset.nota !== undefined)
+      setNote(preset.note ?? preset.nota ?? "");
+  }, [preset]);
+
   const [saving, setSaving] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -37,7 +68,9 @@ export default function NoteForm({
         );
         lat = pos.coords.latitude;
         lng = pos.coords.longitude;
-      } catch {}
+      } catch {
+        // sin gps no rompemos
+      }
 
       await createNote({
         farm,
@@ -48,83 +81,150 @@ export default function NoteForm({
         lat,
         lng,
       } as any);
+
       alert("Nota guardada ✅");
       setFarm("");
       setLot("");
       setWeeds([]);
       setApplications([]);
       setNote("");
-    } catch (err) {
+    } catch {
       alert("Error al guardar");
     } finally {
       setSaving(false);
     }
   };
 
+  // responsive grid:
+  // - en mobile: 1 columna
+  // - en desktop: 2 columnas solo para la fila de Explotación/Lote
   return (
     <form
       onSubmit={onSubmit}
-      style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
+      style={{
+        display: "grid",
+        gap: theme.spacing(4),
+        color: theme.colors.textPrimary,
+        fontSize: "0.9rem",
+      }}
     >
-      <label>
-        Farm
-        <input
-          value={farm}
-          onChange={(e) => setFarm(e.target.value)}
-          required
-        />
-      </label>
-      <label>
-        Lot
-        <input value={lot} onChange={(e) => setLot(e.target.value)} required />
-      </label>
-      <label style={{ gridColumn: "1 / -1" }}>
-        Weeds (coma)
-        <input
-          value={weeds.join(", ")}
-          onChange={(e) =>
-            setWeeds(
-              e.target.value
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean)
-            )
-          }
-        />
-      </label>
-      <label style={{ gridColumn: "1 / -1" }}>
-        Applications (coma)
-        <input
-          value={applications.join(", ")}
-          onChange={(e) =>
-            setApplications(
-              e.target.value
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean)
-            )
-          }
-        />
-      </label>
-      <label style={{ gridColumn: "1 / -1" }}>
-        Note
-        <textarea
-          rows={3}
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-        />
-      </label>
+      {/* fila Explotación / Lote */}
       <div
         style={{
-          gridColumn: "1 / -1",
-          display: "flex",
-          justifyContent: "flex-end",
-          gap: 8,
+          display: "grid",
+          gap: theme.spacing(4),
+          gridTemplateColumns: "1fr",
         }}
       >
-        <button type="submit" disabled={saving}>
+        <div
+          style={{
+            display: "grid",
+            gap: theme.spacing(2),
+          }}
+        >
+          <Label>
+            <span
+              style={{ color: theme.colors.textPrimary, fontSize: "0.9rem" }}
+            >
+              Explotación
+            </span>
+            <Input
+              full
+              value={farm}
+              onChange={(e) => setFarm(e.target.value)}
+              required
+            />
+          </Label>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gap: theme.spacing(2),
+          }}
+        >
+          <Label>
+            <span
+              style={{ color: theme.colors.textPrimary, fontSize: "0.9rem" }}
+            >
+              Lote
+            </span>
+            <Input
+              full
+              value={lot}
+              onChange={(e) => setLot(e.target.value)}
+              required
+            />
+          </Label>
+        </div>
+      </div>
+
+      {/* malezas */}
+      <div style={{ display: "grid", gap: theme.spacing(2) }}>
+        <Label>
+          <span style={{ color: theme.colors.textPrimary, fontSize: "0.9rem" }}>
+            Malezas
+          </span>
+          <Input
+            full
+            value={weeds.join(", ")}
+            onChange={(e) =>
+              setWeeds(
+                e.target.value
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter(Boolean)
+              )
+            }
+          />
+        </Label>
+      </div>
+
+      {/* aplicaciones */}
+      <div style={{ display: "grid", gap: theme.spacing(2) }}>
+        <Label>
+          <span style={{ color: theme.colors.textPrimary, fontSize: "0.9rem" }}>
+            Aplicaciones
+          </span>
+          <Input
+            full
+            value={applications.join(", ")}
+            onChange={(e) =>
+              setApplications(
+                e.target.value
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter(Boolean)
+              )
+            }
+          />
+        </Label>
+      </div>
+
+      {/* nota */}
+      <div style={{ display: "grid", gap: theme.spacing(2) }}>
+        <Label>
+          <span style={{ color: theme.colors.textPrimary, fontSize: "0.9rem" }}>
+            Nota
+          </span>
+          <TextArea
+            full
+            rows={3}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
+        </Label>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+        }}
+      >
+        <Button type="submit" disabled={saving}>
           {saving ? "Guardando…" : "Guardar"}
-        </button>
+        </Button>
       </div>
     </form>
   );

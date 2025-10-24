@@ -1,0 +1,22 @@
+# agro-notes/docker/Dockerfile.dev
+FROM node:20-alpine
+
+WORKDIR /app
+
+# copiamos package.json primero para poder instalar deps
+COPY package.json package-lock.json* ./
+
+# instalamos dependencias normales (no ci porque en dev querés flexibilidad)
+RUN npm install --no-audit --no-fund
+
+# IMPORTANTE:
+# No copiamos el código fuente acá.
+# Vamos a montar el código con volumes para hot reload.
+
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
+
+EXPOSE 3000
+
+# next dev en puerto 3000
+CMD ["npm", "run", "dev", "--", "-p", "3000"]

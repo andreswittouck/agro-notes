@@ -1,6 +1,14 @@
+// agro-notes/src/app/notes/page.tsx
 "use client";
+
 import { useEffect, useState } from "react";
 import { listNotes, type Note } from "../../lib/api";
+import { PageContainer } from "../../components/ui/PageContainer";
+import { Row } from "../../components/ui/Row";
+import { Input } from "../../components/ui/Input";
+import { Button } from "../../components/ui/Button";
+import { NoteCard } from "../../components/NoteCard";
+import { theme } from "../../theme";
 
 export default function NotesPage() {
   const [farm, setFarm] = useState("");
@@ -25,67 +33,89 @@ export default function NotesPage() {
 
   useEffect(() => {
     void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <main style={{ padding: 24, maxWidth: 980, margin: "0 auto" }}>
-      <h1>Notes</h1>
-      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-        <input
-          placeholder="Farm"
-          value={farm}
-          onChange={(e) => setFarm(e.target.value)}
-        />
-        <input
-          placeholder="Lot"
-          value={lot}
-          onChange={(e) => setLot(e.target.value)}
-        />
-        <button onClick={load} disabled={loading}>
-          {loading ? "Cargando…" : "Filtrar"}
-        </button>
-        <a href="/voice-note" style={{ marginLeft: "auto" }}>
-          + Nueva por voz
-        </a>
-      </div>
-
-      <div style={{ display: "grid", gap: 8 }}>
-        {notes.map((n) => (
-          <article
-            key={n.id}
-            style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12 }}
+    <PageContainer>
+      <header style={{ display: "grid", gap: theme.spacing(2) }}>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "baseline",
+            gap: theme.spacing(2),
+          }}
+        >
+          <h1
+            style={{
+              fontSize: "1.1rem",
+              margin: 0,
+              fontWeight: 600,
+            }}
           >
-            <header
-              style={{ display: "flex", gap: 12, alignItems: "baseline" }}
-            >
-              <strong>{n.farm}</strong>
-              <span>· Lot {n.lot}</span>
-              <span style={{ marginLeft: "auto", opacity: 0.6 }}>
-                {new Date(n.created_at).toLocaleString()}
-              </span>
-            </header>
-            <div style={{ fontSize: 14, marginTop: 6 }}>
-              <div>
-                <b>Weeds:</b> {n.weeds.join(", ") || "—"}
-              </div>
-              <div>
-                <b>Applications:</b> {n.applications.join(", ") || "—"}
-              </div>
-              {n.note && (
-                <div>
-                  <b>Note:</b> {n.note}
-                </div>
-              )}
-              {n.lat !== undefined && n.lng !== undefined && (
-                <div style={{ opacity: 0.7 }}>
-                  <b>GPS:</b> {n.lat.toFixed(5)}, {n.lng.toFixed(5)}
-                </div>
-              )}
-            </div>
-          </article>
+            Notas
+          </h1>
+
+          <a
+            href="/voice-note"
+            style={{
+              marginLeft: "auto",
+              textDecoration: "none",
+              fontSize: "0.9rem",
+              color: theme.colors.bgAccent,
+            }}
+          >
+            + Nueva por voz
+          </a>
+        </div>
+
+        <Row>
+          <Input
+            placeholder="Explotación"
+            value={farm}
+            onChange={(e) => setFarm(e.target.value)}
+            style={{ flex: "1 1 140px" }}
+          />
+          <Input
+            placeholder="Lote"
+            value={lot}
+            onChange={(e) => setLot(e.target.value)}
+            style={{ flex: "1 1 100px" }}
+          />
+          <Button
+            onClick={load}
+            disabled={loading}
+            style={{ flexShrink: 0, minWidth: "90px" }}
+          >
+            {loading ? "Cargando…" : "Filtrar"}
+          </Button>
+        </Row>
+      </header>
+
+      <section
+        style={{
+          display: "grid",
+          gap: theme.spacing(3),
+        }}
+      >
+        {notes.map((n) => (
+          <NoteCard key={n.id} n={n} />
         ))}
-        {!notes.length && !loading && <div>No hay notas.</div>}
-      </div>
-    </main>
+
+        {!notes.length && !loading && (
+          <div
+            style={{
+              color: theme.colors.textSecondary,
+              fontSize: "0.9rem",
+              textAlign: "center",
+              padding: theme.spacing(6),
+            }}
+          >
+            No hay notas.
+          </div>
+        )}
+      </section>
+    </PageContainer>
   );
 }
