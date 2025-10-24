@@ -1,5 +1,4 @@
 import { DataSourceOptions } from 'typeorm';
-import { Note } from '../notes/infrastructure/persistence/schemas/note.entity';
 
 export const typeOrmConfig = (): DataSourceOptions => ({
   type: 'postgres',
@@ -10,6 +9,6 @@ export const typeOrmConfig = (): DataSourceOptions => ({
   database: process.env.DB_NAME || 'agro',
   synchronize: (process.env.TYPEORM_SYNC || 'true') === 'true', // MVP
   logging: (process.env.TYPEORM_LOGGING || 'false') === 'true',
-  entities: [Note],
+  entities: [__dirname + '/**/*.entity{.ts,.js}'],
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
 });
