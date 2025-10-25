@@ -10,11 +10,13 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
-        <link
+        {/* <link
           rel="icon"
           href="/icons/agro-notes-logo.png"
           type="image/svg+xml"
-        />
+        /> */}
+        <link rel="manifest" href="/manifest.json" />
+        {/* <meta name="theme-color" content="#214d28" /> */}
         <meta name="theme-color" content={theme.colors.bgPage} />
         <title>Agro Notes</title>
       </head>
