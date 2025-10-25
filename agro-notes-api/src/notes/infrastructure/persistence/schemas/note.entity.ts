@@ -1,31 +1,41 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('notes')
 export class Note {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ length: 120 })
-  farm!: string; // "Juan Carlos"
+  // 👇 campo obligatorio
+  @Column({ name: 'explotacion', type: 'text', nullable: false })
+  explotacion!: string;
 
-  @Column({ length: 60 })
-  lot!: string; // "24"
+  @Column({ name: 'lote', type: 'text', nullable: true })
+  lote?: string;
 
-  @CreateDateColumn()
-  created_at!: Date; // auto-set
+  @Column({ name: 'malezas', type: 'text', array: true, default: [] })
+  malezas?: string[];
 
-  @Column('text', { array: true, default: [] })
-  weeds!: string[]; // ["gramilla", "rama negra"]
+  @Column({ name: 'aplicaciones', type: 'text', array: true, default: [] })
+  aplicaciones?: string[];
 
-  @Column('text', { array: true, default: [] })
-  applications!: string[]; // ["2,4-D", "glifosato"]
+  @Column({ name: 'nota', type: 'text', nullable: true })
+  nota?: string;
 
-  @Column({ type: 'text', nullable: true })
-  note?: string;
-
-  @Column({ type: 'float', nullable: true })
+  @Column({ name: 'lat', type: 'double precision', nullable: true })
   lat?: number;
 
-  @Column({ type: 'float', nullable: true })
+  @Column({ name: 'lng', type: 'double precision', nullable: true })
   lng?: number;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
+  updatedAt!: Date;
 }
