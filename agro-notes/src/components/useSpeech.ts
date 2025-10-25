@@ -1,68 +1,124 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
 
-export function useSpeech(lang: string = "es-AR") {
+import { useEffect, useRef, useState, useCallback } from "react";
+
+type UseSpeechResult = {
+  supported: boolean;
+  listening: boolean;
+  transcript: string;
+  begin: () => void; // apretó / start press
+  end: () => void; // soltó / end press
+  setTranscript: (t: string) => void;
+};
+
+export function useSpeech(lang: string = "es-AR"): UseSpeechResult {
+  // guardamos la instancia de recognition
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  // esto trackea si EL USUARIO todavía está apretando el botón
+  const holdingRef = useRef(false);
+
+  // estado expuesto
   const [supported, setSupported] = useState(false);
   const [listening, setListening] = useState(false);
   const [transcript, setTranscript] = useState("");
 
-  // este buffer guarda lo que capturó en ESTA pulsación
-  const bufferRef = useRef<string>("");
+  // función interna para intentar arrancar grabación
+  const startRecognition = useCallback(() => {
+    const rec = recognitionRef.current;
+    if (!rec) return;
 
-  const recognitionRef = useRef<any>(null);
+    try {
+      rec.start();
+      setListening(true);
+    } catch {
+      // chrome: "start called twice" -> ignoramos
+    }
+  }, []);
 
+  // función interna para frenar grabación
+  const stopRecognition = useCallback(() => {
+    const rec = recognitionRef.current;
+    if (!rec) return;
+    try {
+      rec.stop();
+    } catch {
+      // ignorar errores si ya está parado
+    }
+    setListening(false);
+  }, []);
+
+  // inicializamos reconocimiento de voz UNA vez
   useEffect(() => {
-    const SR: any =
-      (window as any).webkitSpeechRecognition ||
-      (window as any).SpeechRecognition;
-    if (!SR) return;
+    // buscar implementación nativa
+    const SR:
+      | typeof window.SpeechRecognition
+      | typeof window.webkitSpeechRecognition =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+
+    if (!SR) {
+      setSupported(false);
+      return;
+    }
+
     setSupported(true);
 
     const rec = new SR();
     rec.lang = lang;
-    rec.continuous = true;
-    rec.interimResults = false;
-    rec.maxAlternatives = 1;
+    rec.continuous = true; // intentá seguir escuchando
+    rec.interimResults = true; // texto parcial
 
-    rec.onresult = (e: any) => {
-      const text = Array.from(e.results)
-        .map((r: any) => r[0]?.transcript ?? "")
-        .join(" ")
-        .trim();
-
-      // en vez de pushear al transcript global, lo guardo solo en el buffer temporal
-      bufferRef.current = text;
+    rec.onresult = (event: SpeechRecognitionEvent) => {
+      let full = "";
+      for (let i = 0; i < event.results.length; i++) {
+        full += event.results[i][0].transcript + " ";
+      }
+      setTranscript(full.trim());
     };
 
     rec.onend = () => {
-      // cuando termina de escuchar (soltaste el botón),
-      // volcamos lo que quedó en bufferRef al transcript visible
-      // OJO: si ya había transcript previo, lo reemplazamos.
-      setTranscript(bufferRef.current.trim());
-      setListening(false);
+      // navegador cortó.
+      // ¿el usuario sigue apretando?
+      if (holdingRef.current) {
+        // sí -> volvemos a empezar automáticamente
+        startRecognition();
+      } else {
+        // no -> listo, terminó de escuchar
+        setListening(false);
+      }
     };
 
-    rec.onerror = () => {
+    rec.onerror = (err: any) => {
+      // caso tipo "not-allowed" (mic bloqueado)
+      // o "no-speech"
+      // no frenamos holding, pero marcamos no-listening
       setListening(false);
+      // podríamos loguear err.error si querés debug
+      // console.log("speech error", err);
     };
 
     recognitionRef.current = rec;
-  }, [lang]);
+  }, [lang, startRecognition]);
 
-  // begin = apretaste el botón
-  const begin = () => {
-    if (!supported) return;
-    bufferRef.current = ""; // limpiamos buffer para nueva toma
-    setListening(true);
-    recognitionRef.current.start();
+  // usuario APRETA
+  const begin = useCallback(() => {
+    holdingRef.current = true;
+    startRecognition();
+  }, [startRecognition]);
+
+  // usuario SUELTA
+  const end = useCallback(() => {
+    holdingRef.current = false;
+    stopRecognition();
+  }, [stopRecognition]);
+
+  return {
+    supported,
+    listening,
+    transcript,
+    begin,
+    end,
+    setTranscript,
   };
-
-  // end = soltaste el botón
-  const end = () => {
-    if (!supported) return;
-    recognitionRef.current.stop();
-    // onend va a copiar bufferRef.current a transcript
-  };
-
-  return { supported, listening, transcript, begin, end, setTranscript };
 }
