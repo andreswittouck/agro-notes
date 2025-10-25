@@ -10,13 +10,19 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
-        {/* <link
+        {/* ✅ Manifest y metadatos PWA */}
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/icons/agro-notes-logo512.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+        {/* ✅ Favicon para navegadores */}
+        <link
           rel="icon"
           href="/icons/agro-notes-logo.png"
           type="image/svg+xml"
-        /> */}
-        <link rel="manifest" href="/manifest.json" />
-        {/* <meta name="theme-color" content="#214d28" /> */}
+        />
+
         <meta name="theme-color" content={theme.colors.bgPage} />
         <title>Agro Notes</title>
       </head>
