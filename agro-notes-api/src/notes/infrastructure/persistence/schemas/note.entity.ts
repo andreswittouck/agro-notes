@@ -12,20 +12,20 @@ export class Note {
   id!: string;
 
   // 👇 campo obligatorio
-  @Column({ name: 'explotacion', type: 'text', nullable: false })
-  explotacion!: string;
+  @Column({ name: 'farm', type: 'text', nullable: false })
+  farm!: string;
 
-  @Column({ name: 'lote', type: 'text', nullable: true })
-  lote?: string;
+  @Column({ name: 'lot=', type: 'text', nullable: true })
+  lot?: string;
 
-  @Column({ name: 'malezas', type: 'text', array: true, default: [] })
-  malezas?: string[];
+  @Column({ name: 'weeds', type: 'text', array: true, default: [] })
+  weeds?: string[];
 
-  @Column({ name: 'aplicaciones', type: 'text', array: true, default: [] })
-  aplicaciones?: string[];
+  @Column({ name: 'applications', type: 'text', array: true, default: [] })
+  applications?: string[];
 
-  @Column({ name: 'nota', type: 'text', nullable: true })
-  nota?: string;
+  @Column({ name: 'note', type: 'text', nullable: true })
+  note?: string;
 
   @Column({ name: 'lat', type: 'double precision', nullable: true })
   lat?: number;
