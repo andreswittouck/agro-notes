@@ -1,3 +1,4 @@
+import { join } from 'path';
 import { DataSourceOptions } from 'typeorm';
 
 export const typeOrmConfig = (): DataSourceOptions => ({
@@ -9,6 +10,6 @@ export const typeOrmConfig = (): DataSourceOptions => ({
   database: process.env.DB_NAME || 'agro',
   synchronize: (process.env.TYPEORM_SYNC || 'true') === 'true', // MVP
   logging: (process.env.TYPEORM_LOGGING || 'false') === 'true',
-  entities: [__dirname + '/**/*.entity{.ts,.js}'],
+  entities: [join(__dirname, '..', '**', '*.entity.{js,ts}')],
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
 });

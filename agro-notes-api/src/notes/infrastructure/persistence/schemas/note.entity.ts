@@ -15,7 +15,7 @@ export class Note {
   @Column({ name: 'farm', type: 'text', nullable: false })
   farm!: string;
 
-  @Column({ name: 'lot=', type: 'text', nullable: true })
+  @Column({ name: 'lot', type: 'text', nullable: true })
   lot?: string;
 
   @Column({ name: 'weeds', type: 'text', array: true, default: [] })
