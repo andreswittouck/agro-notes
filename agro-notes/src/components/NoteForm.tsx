@@ -129,7 +129,6 @@ export default function NoteForm({ preset }: { preset?: Preset }) {
               Explotación
             </span>
             <Input
-              full
               value={farm}
               onChange={(e) => setFarm(e.target.value)}
               required
@@ -150,7 +149,6 @@ export default function NoteForm({ preset }: { preset?: Preset }) {
               Lote
             </span>
             <Input
-              full
               value={lot}
               onChange={(e) => setLot(e.target.value)}
               required
@@ -166,7 +164,6 @@ export default function NoteForm({ preset }: { preset?: Preset }) {
             Malezas
           </span>
           <Input
-            full
             value={weeds.join(", ")}
             onChange={(e) =>
               setWeeds(
@@ -187,7 +184,6 @@ export default function NoteForm({ preset }: { preset?: Preset }) {
             Aplicaciones
           </span>
           <Input
-            full
             value={applications.join(", ")}
             onChange={(e) =>
               setApplications(
@@ -208,7 +204,6 @@ export default function NoteForm({ preset }: { preset?: Preset }) {
             Nota
           </span>
           <TextArea
-            full
             rows={3}
             value={note}
             onChange={(e) => setNote(e.target.value)}
