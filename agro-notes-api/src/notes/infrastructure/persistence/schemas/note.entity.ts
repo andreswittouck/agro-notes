@@ -12,7 +12,7 @@ export class Note {
   id!: string;
 
   // 👇 campo obligatorio
-  @Column({ name: 'farm', type: 'text', nullable: false })
+  @Column({ name: 'farm', type: 'text', nullable: true })
   farm?: string;
 
   @Column({ name: 'lot', type: 'text', nullable: true })
