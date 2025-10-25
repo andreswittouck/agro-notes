@@ -14,13 +14,13 @@
       "purpose": "any"
     },
     {
-      "src": "/icons/agro-notes-logo.png",
+      "src": "/icons/agro-notes-logo512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/agro-notes-logo.png",
+      "src": "/icons/agro-notes-logo512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
