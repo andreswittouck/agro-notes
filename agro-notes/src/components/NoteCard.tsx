@@ -3,7 +3,7 @@
 
 import { Card } from "./ui/Card";
 import { theme } from "../theme";
-import type { Note } from "../lib/api";
+import { Note } from "@/types/note.type";
 
 export function NoteCard({ n }: { n: Note }) {
   return (
