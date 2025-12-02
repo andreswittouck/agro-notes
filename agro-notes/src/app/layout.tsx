@@ -1,6 +1,7 @@
 // agro-notes/src/app/layout.tsx
 import Image from "next/image";
 import { theme } from "../theme";
+import { PWARegister } from "../components/PWARegister"; // 👈 importar
 
 export default function RootLayout({
   children,
@@ -10,19 +11,15 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
-        {/* ✅ Manifest y metadatos PWA */}
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icons/agro-notes-logo512.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-
-        {/* ✅ Favicon para navegadores */}
         <link
           rel="icon"
           href="/icons/agro-notes-logo.png"
           type="image/svg+xml"
         />
-
         <meta name="theme-color" content={theme.colors.bgPage} />
         <title>Agro Notes</title>
       </head>
@@ -34,6 +31,9 @@ export default function RootLayout({
           fontFamily: theme.fontFamily,
         }}
       >
+        {/* 👇 Registramos el SW apenas carga el body */}
+        <PWARegister />
+
         <header
           style={{
             display: "flex",
