@@ -19,4 +19,13 @@ export class NotesController {
   get(@Param('id') id: string) {
     return this.service.get(id);
   }
+
+  @Get('changes')
+  listChanges(
+    @Query('since') since: string,
+    @Query('farm') farm?: string,
+    @Query('lot') lot?: string,
+  ) {
+    return this.service.listChanges(since, { farm, lot });
+  }
 }

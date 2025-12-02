@@ -1,6 +1,7 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -38,4 +39,7 @@ export class Note {
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp with time zone' })
   updated_at!: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at', nullable: true })
+  deleted_at?: Date | null;
 }

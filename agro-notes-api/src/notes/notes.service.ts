@@ -21,19 +21,37 @@ export class NotesService {
   async create(dto: CreateNoteDto) {
     const note = this.repo.create({
       ...dto,
-      created_at: dto.created_at ? new Date(dto.created_at) : new Date(),
+      created_at: dto.created_at ? new Date(dto.created_at) : undefined,
     });
     return this.repo.save(note);
   }
 
   async list(filter: { farm?: string; lot?: string }) {
-    const qb = this.repo.createQueryBuilder('n').orderBy('n.created_at', 'DESC');
+    const qb = this.repo
+      .createQueryBuilder('n')
+      .where('n.deleted_at IS NULL') // <- opcional pero recomendado
+      .orderBy('n.created_at', 'DESC');
+
     if (filter.farm) qb.andWhere('LOWER(n.farm) = LOWER(:e)', { e: filter.farm });
     if (filter.lot) qb.andWhere('LOWER(n.lot) = LOWER(:l)', { l: filter.lot });
+
     return qb.getMany();
   }
 
   async get(id: string) {
     return this.repo.findOneByOrFail({ id });
+  }
+
+  async listChanges(since: string, filter: { farm?: string; lot?: string }) {
+    const sinceDate = new Date(since);
+    const qb = this.repo
+      .createQueryBuilder('n')
+      .where('(n.updated_at > :since OR n.created_at > :since)', { since: sinceDate }) // incluye nuevos y editados
+      .orderBy('n.updated_at', 'ASC');
+
+    if (filter.farm) qb.andWhere('LOWER(n.farm) = LOWER(:e)', { e: filter.farm });
+    if (filter.lot) qb.andWhere('LOWER(n.lot) = LOWER(:l)', { l: filter.lot });
+
+    return qb.getMany();
   }
 }

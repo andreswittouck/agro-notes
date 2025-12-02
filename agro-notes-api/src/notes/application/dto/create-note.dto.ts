@@ -1,3 +1,4 @@
+// src/notes/application/dto/create-note.dto.ts
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
@@ -7,9 +8,15 @@ import {
   IsOptional,
   IsString,
   Length,
+  IsUUID,
+  IsISO8601,
 } from 'class-validator';
 
 export class CreateNoteDto {
+  @IsOptional()
+  @IsUUID()
+  id?: string; // <- lo puede generar el cliente
+
   @ApiProperty({ example: 'JUAN CARLOS' })
   @IsString()
   @Length(1, 120)
@@ -44,4 +51,8 @@ export class CreateNoteDto {
   @IsOptional()
   @IsLongitude()
   lng?: number;
+
+  @IsOptional()
+  @IsISO8601()
+  created_at?: string; // <- timestamp del cliente si estaba offline
 }
