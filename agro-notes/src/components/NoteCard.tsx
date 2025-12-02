@@ -3,9 +3,9 @@
 
 import { Card } from "./ui/Card";
 import { theme } from "../theme";
-import type { Note } from "../lib/api";
+import { ApiNote } from "@/types/notes.type";
 
-export function NoteCard({ n }: { n: Note }) {
+export function NoteCard({ n }: { n: ApiNote }) {
   return (
     <Card>
       <header
