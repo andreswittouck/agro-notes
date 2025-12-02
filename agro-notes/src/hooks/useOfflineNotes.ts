@@ -3,33 +3,53 @@
 
 import { useEffect, useState } from "react";
 import type { LocalNote, CreateNotePayload } from "@/types/note.type";
+
 import {
   getAllLocalNotes,
+  saveManyNotesToLocal,
   createNoteOfflineFirst,
 } from "@/lib/offline/notesOffline";
+
+import { listNotes } from "@/lib/api";
 
 type Filter = { farm?: string; lot?: string };
 
 export function useOfflineNotes() {
   const [notes, setNotes] = useState<LocalNote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<Filter>({});
 
-  // función para cargar/recargar notas desde IndexedDB
-  async function reload(_filter?: Filter) {
+  // carga inicial y reload manual
+  async function reload(newFilter?: Filter) {
     setLoading(true);
-    try {
-      const local = await getAllLocalNotes();
-      // si quisieras filtrar por farm/lot acá, podrías hacerlo:
-      // const filtered = local.filter(...)
-      setNotes(local);
-    } finally {
-      setLoading(false);
+
+    if (newFilter) setFilter(newFilter);
+
+    // 1) cargar siempre desde IndexedDB
+    const local = await getAllLocalNotes();
+    setNotes(local);
+
+    // 2) si hay internet → pedir al backend
+    if (navigator.onLine) {
+      try {
+        const apiNotes = await listNotes(newFilter ?? filter);
+
+        // guardar en indexedDB
+        await saveManyNotesToLocal(apiNotes);
+
+        // volver a leer para incluir las nuevas
+        const updatedLocal = await getAllLocalNotes();
+        setNotes(updatedLocal);
+      } catch (e) {
+        console.error("Error loading online notes:", e);
+      }
     }
+
+    setLoading(false);
   }
 
-  // carga inicial
   useEffect(() => {
-    void reload();
+    reload(); // carga inicial
   }, []);
 
   async function addNote(
