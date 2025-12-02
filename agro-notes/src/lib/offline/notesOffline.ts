@@ -87,6 +87,15 @@ export async function createNoteOfflineFirst(
   // 3) Si no se pudo sincronizar, devolvemos la versión local pending
   return local;
 }
+export async function saveManyNotesToLocal(apiNotes: ApiNote[]) {
+  const localNotes: LocalNote[] = apiNotes.map((n) => ({
+    ...n,
+    syncStatus: "synced",
+    operation: undefined,
+  }));
+
+  await db.notes.bulkPut(localNotes);
+}
 
 export async function getAllLocalNotes(): Promise<LocalNote[]> {
   return db.notes.orderBy("created_at").reverse().toArray();
