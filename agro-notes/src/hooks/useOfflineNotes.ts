@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { LocalNote, CreateNotePayload } from "@/types/notes.type";
+import type { LocalNote, CreateNotePayload } from "@/types/note.type";
 import {
   getAllLocalNotes,
   createNoteOfflineFirst,

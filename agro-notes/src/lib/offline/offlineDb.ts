@@ -1,7 +1,7 @@
 "use client";
 
 import Dexie, { Table } from "dexie";
-import type { LocalNote } from "@/types/notes.type";
+import type { LocalNote } from "@/types/note.type";
 
 export type PendingOperationType = "create" | "update" | "delete";
 

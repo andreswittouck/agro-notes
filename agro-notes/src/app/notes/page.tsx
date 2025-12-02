@@ -10,7 +10,7 @@ import { NoteCard } from "../../components/NoteCard";
 import { theme } from "../../theme";
 
 import { useOfflineNotes } from "../../hooks/useOfflineNotes";
-import type { LocalNote } from "@/types/notes.type";
+import type { LocalNote } from "@/types/note.type";
 
 export default function NotesPage() {
   const [farm, setFarm] = useState("");

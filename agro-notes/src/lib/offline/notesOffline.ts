@@ -1,7 +1,7 @@
 "use client";
 
 import { db } from "./offlineDb";
-import type { LocalNote, CreateNotePayload, ApiNote } from "@/types/notes.type";
+import type { LocalNote, CreateNotePayload, ApiNote } from "@/types/note.type";
 import { createNote } from "../api";
 
 function generateId() {

@@ -1,4 +1,4 @@
-import { ApiNote, CreateNotePayload } from "@/types/notes.type";
+import { ApiNote, CreateNotePayload } from "@/types/note.type";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000";
 
