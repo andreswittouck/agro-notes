@@ -1,8 +1,7 @@
 // agro-notes/src/app/notes/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { listNotes, type Note } from "../../lib/api";
+import { useState } from "react";
 import { PageContainer } from "../../components/ui/PageContainer";
 import { Row } from "../../components/ui/Row";
 import { Input } from "../../components/ui/Input";
@@ -10,31 +9,34 @@ import { Button } from "../../components/ui/Button";
 import { NoteCard } from "../../components/NoteCard";
 import { theme } from "../../theme";
 
+import { useOfflineNotes } from "../../hooks/useOfflineNotes";
+import type { LocalNote } from "@/types/note.type";
+
 export default function NotesPage() {
   const [farm, setFarm] = useState("");
   const [lot, setLot] = useState("");
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [loading, setLoading] = useState(false);
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const data = await listNotes({
-        farm: farm || undefined,
-        lot: lot || undefined,
-      });
-      setNotes(data);
-    } catch {
-      alert("Error cargando notas");
-    } finally {
-      setLoading(false);
-    }
+  const { notes, loading, reload } = useOfflineNotes();
+
+  const handleFilter = async () => {
+    await reload({
+      farm: farm || undefined,
+      lot: lot || undefined,
+    });
+    // por ahora reload trae todo desde IndexedDB.
+    // Más adelante podemos aplicar el filtro adentro del hook o acá en memoria.
   };
 
-  useEffect(() => {
-    void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // si querés que el filtro se aplique en memoria ya mismo:
+  const filteredNotes = notes.filter((n) => {
+    const matchFarm = farm
+      ? n.farm.toLowerCase().includes(farm.toLowerCase())
+      : true;
+    const matchLot = lot
+      ? n.lot.toLowerCase().includes(lot.toLowerCase())
+      : true;
+    return matchFarm && matchLot;
+  });
 
   return (
     <PageContainer>
@@ -84,7 +86,7 @@ export default function NotesPage() {
             style={{ flex: "1 1 100px" }}
           />
           <Button
-            onClick={load}
+            onClick={handleFilter}
             disabled={loading}
             style={{ flexShrink: 0, minWidth: "90px" }}
           >
@@ -99,11 +101,11 @@ export default function NotesPage() {
           gap: theme.spacing(3),
         }}
       >
-        {notes.map((n) => (
+        {filteredNotes.map((n: LocalNote) => (
           <NoteCard key={n.id} n={n} />
         ))}
 
-        {!notes.length && !loading && (
+        {!filteredNotes.length && !loading && (
           <div
             style={{
               color: theme.colors.textSecondary,
