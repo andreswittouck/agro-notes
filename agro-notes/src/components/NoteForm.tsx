@@ -1,12 +1,13 @@
+// src/components/NoteForm.tsx
 "use client";
 
 import { useEffect, useState } from "react";
-import { createNote } from "../lib/api";
 import { theme } from "../theme";
 import { Label } from "./ui/Label";
 import { Input } from "./ui/Input";
 import { TextArea } from "./ui/TextArea";
 import { Button } from "./ui/Button";
+import { createNoteOfflineFirst } from "../lib/offline/notesOffline";
 
 type Preset = Partial<
   {
@@ -72,7 +73,7 @@ export default function NoteForm({ preset }: { preset?: Preset }) {
         // sin gps no rompemos
       }
 
-      await createNote({
+      await createNoteOfflineFirst({
         farm,
         lot,
         weeds,
@@ -80,24 +81,29 @@ export default function NoteForm({ preset }: { preset?: Preset }) {
         note,
         lat,
         lng,
-      } as any);
+      });
 
-      alert("Nota guardada ✅");
+      if (navigator.onLine) {
+        alert("Nota guardada ✅");
+      } else {
+        alert(
+          "Nota guardada en el dispositivo ✅\nSe sincronizará cuando tengas internet."
+        );
+      }
+
       setFarm("");
       setLot("");
       setWeeds([]);
       setApplications([]);
       setNote("");
-    } catch {
-      alert("Error al guardar");
+    } catch (err) {
+      console.error(err);
+      alert("Error al guardar la nota");
     } finally {
       setSaving(false);
     }
   };
 
-  // responsive grid:
-  // - en mobile: 1 columna
-  // - en desktop: 2 columnas solo para la fila de Explotación/Lote
   return (
     <form
       onSubmit={onSubmit}
