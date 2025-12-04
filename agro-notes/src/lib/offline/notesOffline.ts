@@ -1,3 +1,4 @@
+// src/lib/offline/notesOffline.ts
 "use client";
 
 import { db } from "./offlineDb";
@@ -30,11 +31,11 @@ export async function createNoteOfflineFirst(
     created_at: now,
     updated_at: now,
     deleted_at: null,
-    syncStatus: navigator.onLine ? "pending" : "pending", // por ahora siempre pending
+    syncStatus: "pending",
     operation: "create",
   };
 
-  // 1) Guardar en IndexedDB
+  // 1) Guardar en IndexedDB siempre
   await db.transaction("rw", db.notes, db.pendingOps, async () => {
     await db.notes.put(local);
     await db.pendingOps.add({
@@ -46,47 +47,49 @@ export async function createNoteOfflineFirst(
     });
   });
 
-  // 2) Si hay internet, intentamos sincronizar este registro al toque
-  if (navigator.onLine) {
-    try {
-      const apiNote: ApiNote = await createNote({
-        id: local.id,
-        farm: local.farm,
-        lot: local.lot,
-        weeds: local.weeds,
-        applications: local.applications,
-        note: local.note,
-        lat: local.lat,
-        lng: local.lng,
-        created_at: local.created_at,
-      });
-
-      const synced: LocalNote = {
-        ...apiNote,
-        syncStatus: "synced",
-        operation: undefined,
-      };
-
-      await db.transaction("rw", db.notes, db.pendingOps, async () => {
-        await db.notes.put(synced);
-        // opcional: limpiar pendingOps de esta nota
-        await db.pendingOps
-          .where("entity")
-          .equals("note")
-          .and((op) => op.type === "create" && op.payload.id === local.id)
-          .delete();
-      });
-
-      return synced;
-    } catch (e) {
-      console.error("Error syncing note immediately:", e);
-      // si falla, dejamos el pending en DB
-    }
+  // 2) Si NO hay internet, ni lo intentamos: ya quedó guardada localmente
+  if (!navigator.onLine) {
+    return local;
   }
 
-  // 3) Si no se pudo sincronizar, devolvemos la versión local pending
-  return local;
+  // 3) Si hay internet, intentamos sincronizar con el backend
+  try {
+    const apiNote: ApiNote = await createNote({
+      id: local.id,
+      farm: local.farm,
+      lot: local.lot,
+      weeds: local.weeds,
+      applications: local.applications,
+      note: local.note,
+      lat: local.lat,
+      lng: local.lng,
+      created_at: local.created_at,
+    });
+
+    const synced: LocalNote = {
+      ...apiNote,
+      syncStatus: "synced",
+      operation: undefined,
+    };
+
+    await db.transaction("rw", db.notes, db.pendingOps, async () => {
+      await db.notes.put(synced);
+      // limpiamos pendingOps de esta nota
+      await db.pendingOps
+        .where("entity")
+        .equals("note")
+        .and((op) => op.type === "create" && op.payload.id === local.id)
+        .delete();
+    });
+
+    return synced;
+  } catch (e) {
+    console.error("Error syncing note immediately:", e);
+    // si falla sync, dejamos la nota como pending en local
+    return local;
+  }
 }
+
 export async function saveManyNotesToLocal(apiNotes: ApiNote[]) {
   const localNotes: LocalNote[] = apiNotes.map((n) => ({
     ...n,
