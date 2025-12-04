@@ -36,3 +36,27 @@ export async function listNoteChanges(
   if (!res.ok) throw new Error("Error fetching note changes");
   return (await res.json()) as ApiNote[];
 }
+
+export type UpdateNotePayload = Partial<
+  Omit<CreateNotePayload, "id" | "created_at">
+>;
+
+export async function updateNote(
+  id: string,
+  payload: UpdateNotePayload
+): Promise<ApiNote> {
+  const res = await fetch(`${BASE}/notes/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Error ${res.status}`);
+  return (await res.json()) as ApiNote;
+}
+
+export async function deleteNote(id: string): Promise<void> {
+  const res = await fetch(`${BASE}/notes/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error(`Error ${res.status}`);
+}

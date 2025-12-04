@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
-import { NotesService, CreateNoteDto } from '../../notes.service';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { NotesService, CreateNoteDto, UpdateNoteDto } from '../../notes.service';
 
 @Controller('notes')
 export class NotesController {
@@ -27,5 +27,16 @@ export class NotesController {
     @Query('lot') lot?: string,
   ) {
     return this.service.listChanges(since, { farm, lot });
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateNoteDto) {
+    return this.service.update(id, dto);
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: string) {
+    await this.service.softDelete(id);
+    return { success: true };
   }
 }

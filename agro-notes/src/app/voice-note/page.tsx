@@ -1,27 +1,65 @@
+// agro-notes/src/app/voice-note/page.tsx
 "use client";
 
 import { useMemo } from "react";
-import { PageContainer } from "../../components/ui/PageContainer";
-import { Card } from "../../components/ui/Card";
-import { Row } from "../../components/ui/Row";
-import { MicButton } from "../../components/ui/MicButton";
+import { useSearchParams } from "next/navigation";
+
 import NoteForm from "../../components/NoteForm";
 import { useSpeech } from "../../components/useSpeech";
 import { parseSpeech } from "../../lib/voiceParsing";
 import { theme } from "../../theme";
+
 import { BackButton } from "@/components/ui/BackButton";
-import { useIsMobile } from "../../hooks/useIsMobile"; // 👈 NUEVO
+import { useIsMobile } from "../../hooks/useIsMobile";
+import { PageContainer } from "@/components/ui/PageContainer";
+import { Card } from "@/components/ui/Card";
+import { Row } from "@/components/ui/Row";
+import { MicButton } from "@/components/ui/MicButton";
 
 export default function VoiceNotePage() {
   const { supported, listening, transcript, begin, end, setTranscript } =
     useSpeech("es-AR");
 
   const isMobile = useIsMobile();
+  const searchParams = useSearchParams();
 
-  const preset = useMemo(
+  const mode =
+    (searchParams.get("mode") as "edit" | "create" | null) ?? "create";
+
+  // 👇 preset cuando venís desde "Editar"
+  const presetFromQuery = useMemo(() => {
+    if (mode !== "edit") return {};
+
+    const weeds = searchParams.get("weeds");
+    const applications = searchParams.get("applications");
+
+    return {
+      farm: searchParams.get("farm") ?? "",
+      lot: searchParams.get("lot") ?? "",
+      weeds: weeds
+        ? weeds
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [],
+      applications: applications
+        ? applications
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [],
+      note: searchParams.get("note") ?? "",
+    };
+  }, [mode, searchParams]);
+
+  // 👇 preset cuando dictás por voz (solo si NO estás editando)
+  const presetFromVoice = useMemo(
     () => (transcript ? parseSpeech(transcript) : {}),
     [transcript]
   );
+
+  // 👇 preset final: si editás, manda lo de la URL; si no, lo de voz
+  const preset = mode === "edit" ? presetFromQuery : presetFromVoice;
 
   return (
     <PageContainer maxWidth={theme.maxWidthForm}>
@@ -156,10 +194,12 @@ export default function VoiceNotePage() {
         </Row>
       </Card>
 
+      {/* FORM: usa preset (de voz o de edición) */}
       <Card padding={4}>
         <NoteForm preset={preset} />
       </Card>
 
+      {/* Botones flotantes en mobile (mic + guardar) */}
       {isMobile && (
         <>
           <div
@@ -169,7 +209,6 @@ export default function VoiceNotePage() {
               left: "50%",
               transform: "translateX(-50%)",
               zIndex: 1000,
-
               display: "grid",
               justifyItems: "center",
               rowGap: theme.spacing(1),
@@ -223,7 +262,6 @@ export default function VoiceNotePage() {
             <button
               type="button"
               onClick={() => {
-                // buscamos el primer form y lo mandamos
                 const form = document.querySelector("form");
                 if (form) {
                   form.dispatchEvent(

@@ -8,6 +8,8 @@ import {
   saveManyNotesToLocal,
   createNoteOfflineFirst,
   syncNotes,
+  updateNoteOfflineFirst,
+  deleteNoteOfflineFirst,
 } from "@/lib/offline/notesOffline";
 import { listNotes } from "@/lib/api";
 
@@ -79,5 +81,19 @@ export function useOfflineNotes() {
     setNotes((prev) => [newNote, ...prev]);
   }
 
-  return { notes, loading, addNote, reload };
+  async function editNote(
+    id: string,
+    changes: Partial<Omit<CreateNotePayload, "id" | "created_at">>
+  ) {
+    const updated = await updateNoteOfflineFirst(id, changes);
+    if (!updated) return;
+    setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)));
+  }
+
+  async function removeNote(id: string) {
+    await deleteNoteOfflineFirst(id);
+    setNotes((prev) => prev.filter((n) => n.id !== id));
+  }
+
+  return { notes, loading, addNote, reload, editNote, removeNote };
 }
