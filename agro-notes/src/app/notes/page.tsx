@@ -11,10 +11,13 @@ import { theme } from "../../theme";
 
 import { useOfflineNotes } from "../../hooks/useOfflineNotes";
 import type { LocalNote } from "@/types/note.type";
+import { deleteNoteOfflineFirst } from "@/lib/offline/notesOffline";
+import { useRouter } from "next/navigation";
 
 export default function NotesPage() {
   const [farm, setFarm] = useState("");
   const [lot, setLot] = useState("");
+  const router = useRouter();
 
   const { notes, loading, reload } = useOfflineNotes();
 
@@ -23,11 +26,8 @@ export default function NotesPage() {
       farm: farm || undefined,
       lot: lot || undefined,
     });
-    // por ahora reload trae todo desde IndexedDB.
-    // Más adelante podemos aplicar el filtro adentro del hook o acá en memoria.
   };
 
-  // si querés que el filtro se aplique en memoria ya mismo:
   const filteredNotes = notes.filter((n) => {
     const matchFarm = farm
       ? n.farm.toLowerCase().includes(farm.toLowerCase())
@@ -37,6 +37,32 @@ export default function NotesPage() {
       : true;
     return matchFarm && matchLot;
   });
+
+  // 👇 handlers para pasar a NoteCard
+  const handleEdit = (note: LocalNote) => {
+    console.log("Editar nota", note.id, note);
+    const params = new URLSearchParams({
+      mode: "edit",
+      id: note.id,
+      farm: note.farm,
+      lot: note.lot,
+      weeds: note.weeds.join(","), // "a,b,c"
+      applications: note.applications.join(","), // "x,y,z"
+      note: note.note ?? "",
+    });
+
+    router.push(`/voice-note?${params.toString()}`);
+  };
+
+  const handleDelete = async (note: LocalNote) => {
+    const ok = confirm("¿Eliminar esta nota?");
+    if (!ok) return;
+
+    await deleteNoteOfflineFirst(note.id);
+    reload(); // refrescar lista local
+    console.log("Eliminar nota", note.id, note);
+    // después: modal de confirmación + deleteOfflineFirst(note.id)
+  };
 
   return (
     <PageContainer>
@@ -101,8 +127,13 @@ export default function NotesPage() {
           gap: theme.spacing(3),
         }}
       >
-        {filteredNotes.map((n: LocalNote) => (
-          <NoteCard key={n.id} n={n} />
+        {filteredNotes.map((n) => (
+          <NoteCard
+            key={n.id}
+            n={n}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         ))}
 
         {!filteredNotes.length && !loading && (

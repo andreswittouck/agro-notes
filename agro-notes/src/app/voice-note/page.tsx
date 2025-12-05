@@ -1,27 +1,61 @@
+// agro-notes/src/app/voice-note/page.tsx
 "use client";
 
-import { useMemo } from "react";
-import { PageContainer } from "../../components/ui/PageContainer";
-import { Card } from "../../components/ui/Card";
-import { Row } from "../../components/ui/Row";
-import { MicButton } from "../../components/ui/MicButton";
+import { Suspense, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
+
 import NoteForm from "../../components/NoteForm";
 import { useSpeech } from "../../components/useSpeech";
 import { parseSpeech } from "../../lib/voiceParsing";
 import { theme } from "../../theme";
 import { BackButton } from "@/components/ui/BackButton";
-import { useIsMobile } from "../../hooks/useIsMobile"; // 👈 NUEVO
+import { useIsMobile } from "../../hooks/useIsMobile";
+import { PageContainer } from "@/components/ui/PageContainer";
+import { Card } from "@/components/ui/Card";
+import { Row } from "@/components/ui/Row";
+import { MicButton } from "@/components/ui/MicButton";
 
-export default function VoiceNotePage() {
+function VoiceNotePageInner() {
+  const searchParams = useSearchParams();
+  const isMobile = useIsMobile();
+
+  // --- Query params para modo edición ---
+  const modeParam = searchParams.get("mode");
+  const id = searchParams.get("id") ?? undefined;
+
+  const farmQ = searchParams.get("farm") ?? "";
+  const lotQ = searchParams.get("lot") ?? "";
+  const weedsQ = searchParams.get("weeds") ?? "";
+  const appsQ = searchParams.get("applications") ?? "";
+  const noteQ = searchParams.get("note") ?? "";
+
+  const presetFromQuery = useMemo(
+    () => ({
+      farm: farmQ,
+      lot: lotQ,
+      weeds: weedsQ
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      applications: appsQ
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      note: noteQ,
+    }),
+    [farmQ, lotQ, weedsQ, appsQ, noteQ]
+  );
+
+  // --- Voz ---
   const { supported, listening, transcript, begin, end, setTranscript } =
     useSpeech("es-AR");
 
-  const isMobile = useIsMobile();
-
   const preset = useMemo(
-    () => (transcript ? parseSpeech(transcript) : {}),
-    [transcript]
+    () => (transcript ? parseSpeech(transcript) : presetFromQuery),
+    [transcript, presetFromQuery]
   );
+
+  const mode: "create" | "edit" = modeParam === "edit" ? "edit" : "create";
 
   return (
     <PageContainer maxWidth={theme.maxWidthForm}>
@@ -57,7 +91,7 @@ export default function VoiceNotePage() {
         </div>
       </div>
 
-      {/* Aviso si el browser no soporta voz */}
+      {/* Aviso si el navegador no soporta voz */}
       {!supported && (
         <Card padding={3}>
           <div
@@ -76,7 +110,6 @@ export default function VoiceNotePage() {
         </Card>
       )}
 
-      {/* --- BLOQUE DE VOZ Y TRANSCRIPCIÓN --- */}
       <Card padding={4}>
         <Row
           style={{
@@ -169,7 +202,6 @@ export default function VoiceNotePage() {
               left: "50%",
               transform: "translateX(-50%)",
               zIndex: 1000,
-
               display: "grid",
               justifyItems: "center",
               rowGap: theme.spacing(1),
@@ -211,7 +243,7 @@ export default function VoiceNotePage() {
             </div>
           </div>
 
-          {/* Guardar flotante abajo-derecha */}
+          {/* Botón flotante de guardar */}
           <div
             style={{
               position: "fixed",
@@ -223,7 +255,6 @@ export default function VoiceNotePage() {
             <button
               type="button"
               onClick={() => {
-                // buscamos el primer form y lo mandamos
                 const form = document.querySelector("form");
                 if (form) {
                   form.dispatchEvent(
@@ -248,5 +279,13 @@ export default function VoiceNotePage() {
         </>
       )}
     </PageContainer>
+  );
+}
+
+export default function VoiceNotePage() {
+  return (
+    <Suspense fallback={null}>
+      <VoiceNotePageInner />
+    </Suspense>
   );
 }

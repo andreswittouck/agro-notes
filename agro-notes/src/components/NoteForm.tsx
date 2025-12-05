@@ -1,13 +1,19 @@
-// src/components/NoteForm.tsx
+// agro-notes/src/components/NoteForm.tsx
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+
 import { theme } from "../theme";
 import { Label } from "./ui/Label";
 import { Input } from "./ui/Input";
 import { TextArea } from "./ui/TextArea";
 import { Button } from "./ui/Button";
-import { createNoteOfflineFirst } from "../lib/offline/notesOffline";
+
+import {
+  createNoteOfflineFirst,
+  updateNoteOfflineFirst,
+} from "@/lib/offline/notesOffline";
 
 type Preset = Partial<
   {
@@ -26,6 +32,13 @@ type Preset = Partial<
 >;
 
 export default function NoteForm({ preset }: { preset?: Preset }) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const mode =
+    (searchParams.get("mode") as "edit" | "create" | null) ?? "create";
+  const editingId = searchParams.get("id") ?? undefined;
+
   const [farm, setFarm] = useState(preset?.farm ?? preset?.explotacion ?? "");
   const [lot, setLot] = useState(preset?.lot ?? preset?.lote ?? "");
   const [weeds, setWeeds] = useState<string[]>(
@@ -35,7 +48,9 @@ export default function NoteForm({ preset }: { preset?: Preset }) {
     preset?.applications ?? preset?.aplicaciones ?? []
   );
   const [note, setNote] = useState(preset?.note ?? preset?.nota ?? "");
+  const [saving, setSaving] = useState(false);
 
+  // si cambia el preset (por voz o por URL), actualizamos los estados
   useEffect(() => {
     if (!preset) return;
     if (preset.farm !== undefined || preset.explotacion !== undefined)
@@ -52,14 +67,13 @@ export default function NoteForm({ preset }: { preset?: Preset }) {
       setNote(preset.note ?? preset.nota ?? "");
   }, [preset]);
 
-  const [saving, setSaving] = useState(false);
-
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
       let lat: number | undefined;
       let lng: number | undefined;
+
       try {
         const pos = await new Promise<GeolocationPosition>((res, rej) =>
           navigator.geolocation.getCurrentPosition(res, rej, {
@@ -73,32 +87,46 @@ export default function NoteForm({ preset }: { preset?: Preset }) {
         // sin gps no rompemos
       }
 
-      await createNoteOfflineFirst({
-        farm,
-        lot,
-        weeds,
-        applications,
-        note,
-        lat,
-        lng,
-      });
+      if (mode === "edit" && editingId) {
+        // 🔁 EDITAR
+        await updateNoteOfflineFirst(editingId, {
+          farm,
+          lot,
+          weeds,
+          applications,
+          note,
+          lat,
+          lng,
+        } as any);
 
-      if (navigator.onLine) {
-        alert("Nota guardada ✅");
+        alert("Nota actualizada ✅");
       } else {
-        alert(
-          "Nota guardada en el dispositivo ✅\nSe sincronizará cuando tengas internet."
-        );
+        // ➕ CREAR
+        await createNoteOfflineFirst({
+          farm,
+          lot,
+          weeds,
+          applications,
+          note,
+          lat,
+          lng,
+        } as any);
+
+        alert("Nota guardada ✅");
+
+        // limpiar solo en modo create
+        setFarm("");
+        setLot("");
+        setWeeds([]);
+        setApplications([]);
+        setNote("");
       }
 
-      setFarm("");
-      setLot("");
-      setWeeds([]);
-      setApplications([]);
-      setNote("");
+      // después de crear/editar volvemos a la lista
+      router.push("/notes");
     } catch (err) {
       console.error(err);
-      alert("Error al guardar la nota");
+      alert("Error al guardar");
     } finally {
       setSaving(false);
     }
@@ -224,7 +252,11 @@ export default function NoteForm({ preset }: { preset?: Preset }) {
         }}
       >
         <Button type="submit" disabled={saving}>
-          {saving ? "Guardando…" : "Guardar"}
+          {saving
+            ? "Guardando…"
+            : mode === "edit"
+            ? "Guardar cambios"
+            : "Guardar"}
         </Button>
       </div>
     </form>

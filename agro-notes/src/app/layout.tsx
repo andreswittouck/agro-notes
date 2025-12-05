@@ -1,4 +1,5 @@
 // agro-notes/src/app/layout.tsx
+import "./globals.css";
 import Image from "next/image";
 import { theme } from "../theme";
 import { PWARegister } from "../components/PWARegister"; // 👈 importar

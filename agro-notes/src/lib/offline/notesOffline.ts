@@ -3,7 +3,7 @@
 
 import { db } from "./offlineDb";
 import type { LocalNote, CreateNotePayload, ApiNote } from "@/types/note.type";
-import { createNote, listNoteChanges } from "../api";
+import { createNote, listNoteChanges, updateNote, deleteNote } from "../api";
 
 const LAST_SYNC_KEY = "agro-notes:lastSync";
 
@@ -102,6 +102,118 @@ export async function createNoteOfflineFirst(
   }
 }
 
+// Editar una nota offline-first
+export async function updateNoteOfflineFirst(
+  id: string,
+  changes: Partial<Omit<CreateNotePayload, "id" | "created_at">>
+): Promise<LocalNote | null> {
+  const existing = await db.notes.get(id);
+  if (!existing) return null;
+
+  const now = new Date().toISOString();
+
+  const updated: LocalNote = {
+    ...existing,
+    ...changes,
+    updated_at: now,
+    syncStatus: "pending",
+    operation: "update",
+  };
+
+  await db.transaction("rw", db.notes, db.pendingOps, async () => {
+    await db.notes.put(updated);
+    await db.pendingOps.add({
+      id: generateId(),
+      entity: "note",
+      type: "update",
+      payload: updated,
+      createdAt: now,
+    });
+  });
+
+  // si no hay internet, queda pendiente
+  if (!navigator.onLine) return updated;
+
+  // si hay internet, intentamos sincronizar
+  try {
+    const apiNote: ApiNote = await updateNote(id, {
+      farm: updated.farm,
+      lot: updated.lot,
+      weeds: updated.weeds,
+      applications: updated.applications,
+      note: updated.note,
+      lat: updated.lat,
+      lng: updated.lng,
+    });
+
+    const synced: LocalNote = {
+      ...apiNote,
+      syncStatus: "synced",
+      operation: undefined,
+    };
+
+    await db.transaction("rw", db.notes, db.pendingOps, async () => {
+      await db.notes.put(synced);
+      await db.pendingOps
+        .where("entity")
+        .equals("note")
+        .and((op) => op.type === "update" && op.payload.id === id)
+        .delete();
+    });
+
+    return synced;
+  } catch (e) {
+    console.error("Error syncing note update:", e);
+    return updated;
+  }
+}
+
+// Eliminar una nota offline-first (borrado lógico)
+export async function deleteNoteOfflineFirst(id: string): Promise<void> {
+  const existing = await db.notes.get(id);
+  if (!existing) {
+    await db.notes.delete(id);
+    return;
+  }
+
+  const now = new Date().toISOString();
+
+  const deleted: LocalNote = {
+    ...existing,
+    deleted_at: now,
+    syncStatus: "pending",
+    operation: "delete",
+  };
+
+  await db.transaction("rw", db.notes, db.pendingOps, async () => {
+    await db.notes.put(deleted);
+    await db.pendingOps.add({
+      id: generateId(),
+      entity: "note",
+      type: "delete",
+      payload: { id },
+      createdAt: now,
+    });
+  });
+
+  if (!navigator.onLine) return;
+
+  try {
+    await deleteNote(id);
+    await db.transaction("rw", db.notes, db.pendingOps, async () => {
+      await db.notes.delete(id);
+      await db.pendingOps
+        .where("entity")
+        .equals("note")
+        .and((op) => op.type === "delete" && op.payload.id === id)
+        .delete();
+    });
+  } catch (e) {
+    console.error("Error syncing note delete:", e);
+    // queda pending; se reintenta en syncNotes()
+  }
+}
+
 export async function saveManyNotesToLocal(apiNotes: ApiNote[]) {
   const localNotes: LocalNote[] = apiNotes.map((n) => ({
     ...n,
@@ -132,10 +244,10 @@ export async function syncNotes(params?: { farm?: string; lot?: string }) {
   for (const op of pending) {
     try {
       if (op.type === "create") {
+        // ... ya lo tenés
+      } else if (op.type === "update") {
         const p = op.payload as LocalNote;
-
-        const apiNote: ApiNote = await createNote({
-          id: p.id,
+        const apiNote = await updateNote(p.id, {
           farm: p.farm,
           lot: p.lot,
           weeds: p.weeds,
@@ -143,25 +255,26 @@ export async function syncNotes(params?: { farm?: string; lot?: string }) {
           note: p.note,
           lat: p.lat,
           lng: p.lng,
-          created_at: p.created_at,
         });
-
         const synced: LocalNote = {
           ...apiNote,
           syncStatus: "synced",
           operation: undefined,
         };
-
         await db.transaction("rw", db.notes, db.pendingOps, async () => {
           await db.notes.put(synced);
           await db.pendingOps.delete(op.id);
         });
+      } else if (op.type === "delete") {
+        const { id } = op.payload as { id: string };
+        await deleteNote(id);
+        await db.transaction("rw", db.notes, db.pendingOps, async () => {
+          await db.notes.delete(id);
+          await db.pendingOps.delete(op.id);
+        });
       }
-
-      // aquí más adelante podés manejar "update" / "delete"
     } catch (e) {
       console.error("[sync] Error syncing pending op", op, e);
-      // no borramos la op, se reintenta en el próximo sync
     }
   }
 
