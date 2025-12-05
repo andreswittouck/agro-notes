@@ -6,7 +6,11 @@ module.exports = {
     "./src/lib/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        textSecondary: "#94a3b8",
+      },
+    },
   },
   plugins: [],
 };

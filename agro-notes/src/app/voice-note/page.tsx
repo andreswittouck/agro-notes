@@ -1,14 +1,13 @@
 // agro-notes/src/app/voice-note/page.tsx
 "use client";
 
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 
 import NoteForm from "../../components/NoteForm";
 import { useSpeech } from "../../components/useSpeech";
 import { parseSpeech } from "../../lib/voiceParsing";
 import { theme } from "../../theme";
-
 import { BackButton } from "@/components/ui/BackButton";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import { PageContainer } from "@/components/ui/PageContainer";
@@ -16,50 +15,47 @@ import { Card } from "@/components/ui/Card";
 import { Row } from "@/components/ui/Row";
 import { MicButton } from "@/components/ui/MicButton";
 
-export default function VoiceNotePage() {
+function VoiceNotePageInner() {
+  const searchParams = useSearchParams();
+  const isMobile = useIsMobile();
+
+  // --- Query params para modo edición ---
+  const modeParam = searchParams.get("mode");
+  const id = searchParams.get("id") ?? undefined;
+
+  const farmQ = searchParams.get("farm") ?? "";
+  const lotQ = searchParams.get("lot") ?? "";
+  const weedsQ = searchParams.get("weeds") ?? "";
+  const appsQ = searchParams.get("applications") ?? "";
+  const noteQ = searchParams.get("note") ?? "";
+
+  const presetFromQuery = useMemo(
+    () => ({
+      farm: farmQ,
+      lot: lotQ,
+      weeds: weedsQ
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      applications: appsQ
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      note: noteQ,
+    }),
+    [farmQ, lotQ, weedsQ, appsQ, noteQ]
+  );
+
+  // --- Voz ---
   const { supported, listening, transcript, begin, end, setTranscript } =
     useSpeech("es-AR");
 
-  const isMobile = useIsMobile();
-  const searchParams = useSearchParams();
-
-  const mode =
-    (searchParams.get("mode") as "edit" | "create" | null) ?? "create";
-
-  // 👇 preset cuando venís desde "Editar"
-  const presetFromQuery = useMemo(() => {
-    if (mode !== "edit") return {};
-
-    const weeds = searchParams.get("weeds");
-    const applications = searchParams.get("applications");
-
-    return {
-      farm: searchParams.get("farm") ?? "",
-      lot: searchParams.get("lot") ?? "",
-      weeds: weeds
-        ? weeds
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean)
-        : [],
-      applications: applications
-        ? applications
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean)
-        : [],
-      note: searchParams.get("note") ?? "",
-    };
-  }, [mode, searchParams]);
-
-  // 👇 preset cuando dictás por voz (solo si NO estás editando)
-  const presetFromVoice = useMemo(
-    () => (transcript ? parseSpeech(transcript) : {}),
-    [transcript]
+  const preset = useMemo(
+    () => (transcript ? parseSpeech(transcript) : presetFromQuery),
+    [transcript, presetFromQuery]
   );
 
-  // 👇 preset final: si editás, manda lo de la URL; si no, lo de voz
-  const preset = mode === "edit" ? presetFromQuery : presetFromVoice;
+  const mode: "create" | "edit" = modeParam === "edit" ? "edit" : "create";
 
   return (
     <PageContainer maxWidth={theme.maxWidthForm}>
@@ -95,7 +91,7 @@ export default function VoiceNotePage() {
         </div>
       </div>
 
-      {/* Aviso si el browser no soporta voz */}
+      {/* Aviso si el navegador no soporta voz */}
       {!supported && (
         <Card padding={3}>
           <div
@@ -114,7 +110,6 @@ export default function VoiceNotePage() {
         </Card>
       )}
 
-      {/* --- BLOQUE DE VOZ Y TRANSCRIPCIÓN --- */}
       <Card padding={4}>
         <Row
           style={{
@@ -194,12 +189,10 @@ export default function VoiceNotePage() {
         </Row>
       </Card>
 
-      {/* FORM: usa preset (de voz o de edición) */}
       <Card padding={4}>
         <NoteForm preset={preset} />
       </Card>
 
-      {/* Botones flotantes en mobile (mic + guardar) */}
       {isMobile && (
         <>
           <div
@@ -250,7 +243,7 @@ export default function VoiceNotePage() {
             </div>
           </div>
 
-          {/* Guardar flotante abajo-derecha */}
+          {/* Botón flotante de guardar */}
           <div
             style={{
               position: "fixed",
@@ -286,5 +279,13 @@ export default function VoiceNotePage() {
         </>
       )}
     </PageContainer>
+  );
+}
+
+export default function VoiceNotePage() {
+  return (
+    <Suspense fallback={null}>
+      <VoiceNotePageInner />
+    </Suspense>
   );
 }

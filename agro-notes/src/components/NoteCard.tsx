@@ -1,5 +1,6 @@
 "use client";
 
+import { theme } from "@/theme";
 import { Card } from "./ui/Card";
 import type { LocalNote } from "@/types/note.type";
 
@@ -20,20 +21,38 @@ export function NoteCard({ n, onEdit, onDelete }: Props) {
           {/* HEADER */}
           <header className="flex flex-wrap items-center gap-2 text-sm">
             <strong className="text-white">{n.farm}</strong>
-            <span className="text-slate-300">· Lote {n.lot}</span>
-            <span className="ml-auto text-xs text-slate-400 whitespace-nowrap">
+            <span
+              style={{ color: theme.colors.textSecondary }}
+              className="text-slate-300 "
+            >
+              · Lote {n.lot}
+            </span>
+            <span
+              style={{ color: theme.colors.textSecondary }}
+              className="ml-auto text-xs text-slate-400 whitespace-nowrap"
+            >
               {new Date(n.created_at).toLocaleString()}
             </span>
           </header>
 
           {/* CAMPOS */}
           <div>
-            <b className="text-slate-400">Malezas:</b>{" "}
+            <b
+              style={{ color: theme.colors.textSecondary }}
+              className="text-slate-400 "
+            >
+              Malezas:
+            </b>{" "}
             <span className="text-white">{n.weeds.join(", ") || "—"}</span>
           </div>
 
           <div>
-            <b className="text-slate-400">Aplicaciones:</b>{" "}
+            <b
+              style={{ color: theme.colors.textSecondary }}
+              className="text-slate-400"
+            >
+              Aplicaciones:
+            </b>{" "}
             <span className="text-white">
               {n.applications.join(", ") || "—"}
             </span>
@@ -41,15 +60,28 @@ export function NoteCard({ n, onEdit, onDelete }: Props) {
 
           {n.note && (
             <div>
-              <b className="text-slate-400">Nota:</b>{" "}
+              <b
+                style={{ color: theme.colors.textSecondary }}
+                className="text-slate-400"
+              >
+                Nota:
+              </b>{" "}
               <span className="text-white">{n.note}</span>
             </div>
           )}
 
           {n.lat && n.lng && (
             <div>
-              <b className="text-slate-400">GPS:</b>{" "}
-              <span className="text-slate-300">
+              <b
+                style={{ color: theme.colors.textSecondary }}
+                className="text-slate-400"
+              >
+                GPS:
+              </b>{" "}
+              <span
+                style={{ color: theme.colors.textSecondary }}
+                className="text-slate-300"
+              >
                 {n.lat.toFixed(5)}, {n.lng.toFixed(5)}
               </span>
             </div>
