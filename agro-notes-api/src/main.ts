@@ -1,11 +1,16 @@
+// IMPORTANTE: este import side-effect tiene que ser el PRIMERO del
+// archivo. Garantiza que las env vars (`FIREBASE_ADMIN_KEY_PATH`,
+// `AUTHORIZED_EMAILS`, etc.) ya estén cargadas cuando otros módulos
+// (firebase-admin.ts, AuthorizedUsersService, etc.) se importen,
+// porque sus side effects de inicialización corren al cargar el
+// módulo. Si movés esto más abajo, `firebase-admin` se inicializa sin
+// credenciales y todo el AuthGuard responde 401.
+import 'dotenv/config';
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule, OpenAPIObject } from '@nestjs/swagger';
-import * as dotenv from 'dotenv';
-
-// Carga variables del .env antes de iniciar Nest
-dotenv.config();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -32,7 +37,16 @@ async function bootstrap() {
       .setTitle('Agro Notes API')
       .setDescription('API for managing field notes by voice or manual entry')
       .setVersion('1.0.0')
-      .addTag('notes');
+      .addTag('notes')
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Firebase ID Token',
+        },
+        'firebase-auth',
+      );
     return builder.build();
   }
 

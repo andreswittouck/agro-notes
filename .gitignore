@@ -1,22 +1,37 @@
-cat > .gitignore <<'EOF'
-# Node
-node_modules
-npm-debug.log
+# ========== Node ==========
+node_modules/
+npm-debug.log*
 yarn-error.log
+pnpm-debug.log*
 
-# Builds
-dist
-.next
-coverage
+# ========== Builds ==========
+dist/
+.next/
+out/
+build/
+coverage/
+*.tsbuildinfo
 
-# Env
+# ========== Env (CRÍTICO — no commitear nunca) ==========
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+!.env.*.example
 
-# OS
+# ========== Firebase service account (CRÍTICO — no commitear nunca) ==========
+firebase-admin-key.json
+**/firebase-admin-key.json
+*-service-account.json
+
+# ========== Editores / OS ==========
 .DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
 
-# Docker
+# ========== Docker / PID ==========
 *.pid
-EOF
+*.seed
+*.log

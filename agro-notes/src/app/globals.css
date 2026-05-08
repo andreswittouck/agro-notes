@@ -1,8 +1,111 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* AgroNotes — Tailwind v4 + tokens de la paleta */
+@import "tailwindcss";
 
-/* Opcional: estilos base mínimos */
+/* ---------------------------------------------------------- */
+/* Paleta (single source of truth de los colores y radios)    */
+/* ---------------------------------------------------------- */
+@theme {
+  /* Colores */
+  --color-page: #0f172a;
+  --color-card: #1e2537;
+  --color-card-hover: #2a3247;
+  --color-accent: #3b82f6;
+  --color-accent-hover: #2563eb;
+  --color-accent-soft: rgba(59, 130, 246, 0.15);
+  --color-mic-active: #dc2626;
+  --color-success: #10b981;
+
+  --color-fg: #ffffff;
+  --color-fg-muted: #94a3b8;
+  --color-fg-subtle: #64748b;
+
+  --color-border-subtle: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.18);
+
+  --color-warning-bg: #fff6bf;
+  --color-warning-fg: #4a3b00;
+
+  /* Radios extra (los defaults de Tailwind cubren sm/md/lg/xl/full) */
+  --radius-pill: 999px;
+
+  /* Tipografía */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell,
+    "Noto Sans", sans-serif;
+
+  /* Sombras */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.25), 0 4px 12px rgba(0, 0, 0, 0.18);
+  --shadow-fab: 0 6px 16px rgba(0, 0, 0, 0.45);
+  --shadow-mic-active: 0 0 0 6px rgba(220, 38, 38, 0.25),
+    0 0 24px rgba(220, 38, 38, 0.55);
+}
+
+/* ---------------------------------------------------------- */
+/* Reset suave + defaults                                     */
+/* ---------------------------------------------------------- */
+html,
+body {
+  background-color: var(--color-page);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 body {
   margin: 0;
+  min-height: 100dvh;
+}
+
+/* iOS: nunca dejar que el highlight gris arruine los taps de los botones */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Safe areas (iPhone con notch) */
+@supports (padding: env(safe-area-inset-top)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Scroll smooth pero respetando preferencia de reduced motion */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* ---------------------------------------------------------- */
+/* Animaciones de la UI                                       */
+/* ---------------------------------------------------------- */
+@keyframes mic-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.6);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 12px rgba(220, 38, 38, 0);
+  }
+}
+
+.animate-mic-pulse {
+  animation: mic-pulse 1.4s ease-out infinite;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 200ms ease-out;
 }

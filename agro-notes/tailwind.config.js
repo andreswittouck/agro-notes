@@ -1,16 +1,5 @@
-/** @type {import('tailwindcss').Config} */
-module.exports = {
-  content: [
-    "./src/app/**/*.{js,ts,jsx,tsx}",
-    "./src/components/**/*.{js,ts,jsx,tsx}",
-    "./src/lib/**/*.{js,ts,jsx,tsx}",
-  ],
-  theme: {
-    extend: {
-      colors: {
-        textSecondary: "#94a3b8",
-      },
-    },
-  },
-  plugins: [],
-};
+// Migrado a Tailwind v4 — la configuración ahora vive en
+// `src/app/globals.css` dentro del bloque `@theme`.
+// Este archivo se mantiene vacío para evitar que Tailwind v4 levante
+// configuración v3 obsoleta. Podés borrarlo cuando quieras.
+module.exports = {};

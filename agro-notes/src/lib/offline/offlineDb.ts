@@ -20,10 +20,22 @@ class AgroNotesDB extends Dexie {
   constructor() {
     super("AgroNotesDB");
 
+    // -----------------------------------------------------------------
+    // v1 — schema original (sin owner_email / is_private).
+    // -----------------------------------------------------------------
     this.version(1).stores({
-      // índice primario: id
-      // índices secundarios: created_at, updated_at, farm, lot, syncStatus
       notes: "id, created_at, updated_at, farm, lot, syncStatus",
+      pendingOps: "id, entity, type, createdAt",
+    });
+
+    // -----------------------------------------------------------------
+    // v2 — agregar índices por owner_email y is_private. Las filas
+    // existentes se mantienen; el código de sync va a refrescar los
+    // campos faltantes la primera vez que pulle desde el servidor.
+    // -----------------------------------------------------------------
+    this.version(2).stores({
+      notes:
+        "id, created_at, updated_at, farm, lot, syncStatus, owner_email, is_private",
       pendingOps: "id, entity, type, createdAt",
     });
   }
