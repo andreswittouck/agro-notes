@@ -1,7 +1,7 @@
 // agro-notes/src/app/setup-password/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { confirmPasswordReset, verifyPasswordResetCode } from "firebase/auth";
 
@@ -12,7 +12,22 @@ import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { auth } from "../../lib/firebase";
 
+/**
+ * Wrapper externo que solo envuelve el contenido real en un Suspense.
+ * Next.js 14 exige Suspense alrededor de cualquier client component
+ * que use `useSearchParams()`, porque ese hook puede deferir el render
+ * inicial. Sin esto, `next build` falla con
+ * "useSearchParams() should be wrapped in a suspense boundary".
+ */
 export default function SetupPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <SetupPasswordInner />
+    </Suspense>
+  );
+}
+
+function SetupPasswordInner() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
