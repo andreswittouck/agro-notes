@@ -1,8 +1,12 @@
 // src/hooks/useOfflineNotes.ts
 "use client";
 
-import { useEffect, useState } from "react";
-import type { LocalNote, CreateNotePayload } from "@/types/note.type";
+import { useEffect, useState, useCallback } from "react";
+import type {
+  LocalNote,
+  CreateNotePayload,
+  Scope,
+} from "@/types/note.type";
 import {
   getAllLocalNotes,
   saveManyNotesToLocal,
@@ -12,67 +16,75 @@ import {
   deleteNoteOfflineFirst,
 } from "@/lib/offline/notesOffline";
 import { listNotes } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
-type Filter = { farm?: string; lot?: string };
+type Filter = { farm?: string; lot?: string; scope?: Scope };
 
-export function useOfflineNotes() {
+export function useOfflineNotes(initial?: Filter) {
+  const { user, loading: authLoading } = useAuth();
   const [notes, setNotes] = useState<LocalNote[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<Filter>({});
+  const [filter, setFilter] = useState<Filter>(initial ?? {});
 
-  async function reload(newFilter?: Filter) {
-    setLoading(true);
+  const reload = useCallback(
+    async (newFilter?: Filter) => {
+      setLoading(true);
 
-    if (newFilter) setFilter(newFilter);
+      const next: Filter = newFilter ? { ...filter, ...newFilter } : filter;
+      if (newFilter) setFilter(next);
 
-    // 1) siempre leemos IndexedDB
-    const local = await getAllLocalNotes();
-    setNotes(local);
+      // 1) leemos siempre IndexedDB primero (funciona sin sesión)
+      const local = await getAllLocalNotes();
+      setNotes(local);
 
-    // 2) si hay internet, pedimos notas "full" y actualizamos local
-    if (navigator.onLine) {
-      try {
-        const apiNotes = await listNotes(newFilter ?? filter);
-        await saveManyNotesToLocal(apiNotes);
-        const updated = await getAllLocalNotes();
-        setNotes(updated);
-      } catch (e) {
-        console.error("Error loading online notes:", e);
+      // 2) si hay internet Y user logueado, refrescamos contra la API.
+      // Sin user, no llamamos al backend: caería con 401 sin sentido.
+      if (navigator.onLine && user) {
+        try {
+          const apiNotes = await listNotes(next);
+          await saveManyNotesToLocal(apiNotes);
+          const updated = await getAllLocalNotes();
+          setNotes(updated);
+        } catch (e) {
+          console.error("Error loading online notes:", e);
+        }
       }
-    }
 
-    setLoading(false);
-  }
+      setLoading(false);
+    },
+    [filter, user]
+  );
 
   useEffect(() => {
-    // carga inicial
+    // Espera a que Firebase termine de cargar el estado antes de
+    // intentar nada online. La lectura local sigue inmediata.
+    if (authLoading) return;
+
     void reload();
 
     if (typeof window === "undefined") return;
 
-    // cuando arranca online, intentamos sincronizar
-    if (navigator.onLine) {
+    if (navigator.onLine && user) {
       void (async () => {
-        await syncNotes();
+        await syncNotes(filter);
         await reload();
       })();
     }
 
-    // nos suscribimos al evento "online" para sincronizar cuando vuelva la señal
     const handler = () => {
+      if (!user) return;
       (async () => {
-        await syncNotes();
+        await syncNotes(filter);
         await reload();
       })();
     };
-
     window.addEventListener("online", handler);
 
     return () => {
       window.removeEventListener("online", handler);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user, authLoading]);
 
   async function addNote(
     payload: Omit<CreateNotePayload, "id" | "created_at">
@@ -95,5 +107,5 @@ export function useOfflineNotes() {
     setNotes((prev) => prev.filter((n) => n.id !== id));
   }
 
-  return { notes, loading, addNote, reload, editNote, removeNote };
+  return { notes, loading, addNote, reload, editNote, removeNote, filter };
 }

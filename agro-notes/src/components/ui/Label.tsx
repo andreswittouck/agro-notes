@@ -1,27 +1,40 @@
 // agro-notes/src/components/ui/Label.tsx
 "use client";
-import { theme } from "../../theme";
 
-export function Label({
-  children,
-  htmlFor,
-  style,
-}: {
+type LabelProps = {
   children: React.ReactNode;
   htmlFor?: string;
-  style?: React.CSSProperties;
-}) {
+  className?: string;
+};
+
+/**
+ * Label apilado: el `<label>` ya envuelve el control, así que NO
+ * necesita un wrapper adicional alrededor en el formulario.
+ *
+ * Uso:
+ *   <Label>
+ *     <span>Explotación</span>
+ *     <Input ... />
+ *   </Label>
+ *
+ *   o, equivalente:
+ *
+ *   <Label>
+ *     Explotación
+ *     <Input ... />
+ *   </Label>
+ */
+export function Label({ children, htmlFor, className = "" }: LabelProps) {
   return (
     <label
       htmlFor={htmlFor}
-      style={{
-        color: theme.colors.textSecondary,
-        fontSize: "0.8rem",
-        display: "grid",
-        gap: theme.spacing(1),
-        fontWeight: 500,
-        ...style,
-      }}
+      className={[
+        "grid gap-1.5",
+        "text-sm font-medium text-fg",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
     >
       {children}
     </label>

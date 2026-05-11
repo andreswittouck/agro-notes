@@ -1,15 +1,14 @@
+// agro-notes/src/components/ui/BackButton.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
-import { theme } from "../../theme";
 
-export function BackButton({
-  href,
-  label = "Volver",
-}: {
+type BackButtonProps = {
   href?: string;
   label?: string;
-}) {
+};
+
+export function BackButton({ href, label = "Volver" }: BackButtonProps) {
   const router = useRouter();
 
   const go = () => {
@@ -24,28 +23,31 @@ export function BackButton({
     <button
       type="button"
       onClick={go}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "6px",
-        backgroundColor: "transparent",
-        border: `1px solid ${theme.colors.border}`,
-        color: theme.colors.textPrimary,
-        fontSize: "0.8rem",
-        borderRadius: theme.radius.sm,
-        padding: `${theme.spacing(2)} ${theme.spacing(3)}`,
-        cursor: "pointer",
-      }}
+      className="
+        inline-flex items-center gap-1.5
+        text-xs sm:text-sm font-medium
+        text-fg-muted hover:text-fg
+        bg-transparent hover:bg-card-hover
+        border border-border-subtle hover:border-border-strong
+        rounded-md px-3 py-1.5
+        transition-colors
+        cursor-pointer
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page
+      "
     >
-      {/* Flecha izquierda simple en SVG */}
       <svg
-        width="16"
-        height="16"
-        fill="currentColor"
+        width="14"
+        height="14"
         viewBox="0 0 24 24"
-        style={{ display: "block" }}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
       >
-        <path d="M14 7l-5 5 5 5V7z" />
+        <line x1="19" y1="12" x2="5" y2="12" />
+        <polyline points="12 19 5 12 12 5" />
       </svg>
       <span>{label}</span>
     </button>
